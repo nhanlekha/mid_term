@@ -111,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ignore: non_constant_identifier_names
-  Widget Head(Usermodel user) {
+  Widget Head(UserModel user) {
     return Container(
       color: Colors.white,
       child: Column(
@@ -144,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       SizedBox(width: 53.w),
                       Text(
-                        user.followers.length.toString(),
+                        user.followers!.length.toString(),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.sp,
@@ -152,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       SizedBox(width: 70.w),
                       Text(
-                        user.following.length.toString(),
+                        user.following!.length.toString(),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.sp,
@@ -195,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.username,
+                  user.username!,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.bold,
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 5.h),
                 Text(
-                  user.bio,
+                  user.bio!,
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w300,

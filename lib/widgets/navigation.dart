@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mid_term/data/firebase_service/firestor.dart';
+import 'package:mid_term/data/firebase_service/user_list.dart';
+import 'package:mid_term/data/model/usermodel.dart';
 
 import '../screen/add_screen.dart';
 import '../screen/explore.dart';
@@ -22,21 +25,22 @@ int _currentIndex = 0;
 class _Navigations_ScreenState extends State<Navigations_Screen> {
   late PageController pageController;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  UserModel? user;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     // logout();
-  //   final data = {
-  //     'email': 'email',
-  //   'username': 'username',
-  //   'bio': 'bio',
-  //   'profile': 'profile',
-  //   'followers': [],
-  //   'following': [],
-  // };
-  //
-  //   addProductDetails(data,'124hufdhiusfhgfs');
+    //   final data = {
+    //     'email': 'email',
+    //   'username': 'username',
+    //   'bio': 'bio',
+    //   'profile': 'profile',
+    //   'followers': [],
+    //   'following': [],
+    // };
+    //
+    //   addProductDetails(data,'124hufdhiusfhgfs');
     pageController = PageController();
   }
 
@@ -58,7 +62,6 @@ class _Navigations_ScreenState extends State<Navigations_Screen> {
     }
   }
 
-
   @override
   void dispose() {
     // TODO: implement dispose
@@ -78,54 +81,64 @@ class _Navigations_ScreenState extends State<Navigations_Screen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: Container(
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
-          currentIndex: _currentIndex,
-          onTap: navigationTapped,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: '',
+    return StreamBuilder(
+      initialData: null,
+      stream: UserService().Usermodel,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          print("hahahihi");
+          UserService.userMod = snapshot.data!;
+        }
+        return Scaffold(
+          bottomNavigationBar: Container(
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.grey,
+              currentIndex: _currentIndex,
+              onTap: navigationTapped,
+              items: [
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: '',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.search),
+                  label: '',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.camera),
+                  label: '',
+                ),
+                BottomNavigationBarItem(
+                  icon: Image.asset(
+                    'images/instagram-reels-icon.png',
+                    height: 20.h,
+                  ),
+                  label: '',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: '',
+                ),
+              ],
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: '',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.camera),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset(
-                'images/instagram-reels-icon.png',
-                height: 20.h,
-              ),
-              label: '',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: '',
-            ),
-          ],
-        ),
-      ),
-      body: PageView(
-        controller: pageController,
-        onPageChanged: onPageChanged,
-        children: [
-          HomeScreen(),
-          ExploreScreen(),
-          AddScreen(),
-          ReelScreen(),
-          ProfileScreen(
-            Uid: _auth.currentUser!.uid,
           ),
-        ],
-      ),
+          body: PageView(
+            controller: pageController,
+            onPageChanged: onPageChanged,
+            children: [
+              HomeScreen(),
+              ExploreScreen(),
+              AddScreen(),
+              ReelScreen(),
+              ProfileScreen(
+                Uid: _auth.currentUser!.uid,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
