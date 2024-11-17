@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mid_term/data/firebase_service/firestor.dart';
+import 'package:provider/provider.dart';
 
 import 'auth/mainpage.dart';
 
@@ -17,8 +19,8 @@ void main() async {
           messagingSenderId: "811917722570",
           appId: "1:811917722570:web:223b9c36bada2392464533",
           measurementId: "G-9QKYQ3JKH2"
-        // Your web Firebase config options
-      ),
+          // Your web Firebase config options
+          ),
     );
   } else {
     await Firebase.initializeApp();
@@ -31,9 +33,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ScreenUtilInit(designSize: Size(375, 812), child: MainPage()),
+    return MultiProvider(
+      providers: [
+        StreamProvider.value(
+          value: Firebase_Firestor().user,
+          initialData: null,
+          catchError: (context, error) => null,
+        ),
+      ],
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: ScreenUtilInit(designSize: Size(375, 812), child: MainPage()),
+      ),
     );
   }
 }
