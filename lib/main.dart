@@ -1,12 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mid_term/pages/home.dart';
-import 'package:mid_term/user_auth/presentation/login_page.dart';
-import 'package:mid_term/user_auth/presentation/sign_up_page.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'auth/mainpage.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
     await Firebase.initializeApp(
@@ -32,14 +31,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: LoginPage(),
+      home: ScreenUtilInit(designSize: Size(375, 812), child: MainPage()),
     );
   }
 }
