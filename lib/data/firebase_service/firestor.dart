@@ -15,11 +15,11 @@ class Firebase_Firestor {
     required String email,
     required String username,
     required String bio,
-    required String profile,
+    required String profile, required String uid,
   }) async {
     await _firebaseFirestore
         .collection('users')
-        .doc('dfgfdgdfhgdfhfghnfggf')
+        .doc(uid)
         .set({
       'email': email,
       'username': username,
@@ -37,7 +37,9 @@ class Firebase_Firestor {
           .collection('users')
           .doc(UID != null ? UID : _auth.currentUser!.uid)
           .get();
+
       final snapuser = user.data()!;
+
       return Usermodel(
           snapuser['bio'],
           snapuser['email'],

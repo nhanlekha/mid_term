@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../widgets/post_widget.dart';
+import 'add_post_camera.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,13 +30,21 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Image.asset('images/instagram.jpg'),
         ),leading: GestureDetector(
         onTap: () async {
-          await FirebaseAuth.instance.signOut();
-          print("Đăng xuất thành công!");
+
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => CameraScreens(),
+          ));
         },
         child: Image.asset('images/camera.jpg'),
       ),
         actions: [
-          Image.asset('images/send.jpg'),
+          GestureDetector(
+              onTap: () async {
+
+                FirebaseAuth.instance.signOut();
+
+              },
+              child: Image.asset('images/send.jpg')),
         ],
         backgroundColor: const Color(0xffFAFAFA),
       ),

@@ -55,6 +55,7 @@ class Authentication {
 
           // get information with firestor
           await Firebase_Firestor().CreateUser(
+            uid: uid!,
             email: email,
             username: username,
             bio: bio,

@@ -24,9 +24,9 @@ class _AddReelsScreenState extends State<AddReelsScreen> {
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (ps.isAuth) {
       List<AssetPathEntity> album =
-          await PhotoManager.getAssetPathList(type: RequestType.video);
+      await PhotoManager.getAssetPathList(type: RequestType.video);
       List<AssetEntity> media =
-          await album[0].getAssetListPaged(page: currentPage, size: 60);
+      await album[0].getAssetListPaged(page: currentPage, size: 60);
 
       for (var asset in media) {
         if (asset.type == AssetType.video) {
