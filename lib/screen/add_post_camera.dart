@@ -8,7 +8,6 @@ import 'package:photo_manager/photo_manager.dart';
 
 import 'addpost_text.dart';
 
-
 class CameraScreens extends StatelessWidget {
   const CameraScreens({super.key});
 
@@ -124,8 +123,6 @@ class _MainPageState extends State<MainPage> {
           if (imagesList.isNotEmpty)
             ElevatedButton(
               onPressed: () {
-                // Define your action here
-
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) => AddPostTextScreen(imagesList.first),
                 ));
@@ -182,15 +179,15 @@ class _MainPageState extends State<MainPage> {
                           padding: const EdgeInsets.all(10),
                           child: isFlashOn
                               ? const Icon(
-                            Icons.flash_on,
-                            color: Colors.white,
-                            size: 30,
-                          )
+                                  Icons.flash_on,
+                                  color: Colors.white,
+                                  size: 30,
+                                )
                               : const Icon(
-                            Icons.flash_off,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                                  Icons.flash_off,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
                         ),
                       ),
                     ),
@@ -211,15 +208,15 @@ class _MainPageState extends State<MainPage> {
                           padding: const EdgeInsets.all(10),
                           child: isRearCamera
                               ? const Icon(
-                            Icons.camera_rear,
-                            color: Colors.white,
-                            size: 30,
-                          )
+                                  Icons.camera_rear,
+                                  color: Colors.white,
+                                  size: 30,
+                                )
                               : const Icon(
-                            Icons.camera_front,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                                  Icons.camera_front,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
                         ),
                       ),
                     ),

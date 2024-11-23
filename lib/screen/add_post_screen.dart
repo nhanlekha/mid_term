@@ -1,9 +1,7 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:photo_manager/photo_manager.dart';
-
 import 'addpost_text.dart';
 
 class AddPostScreen extends StatefulWidget {
@@ -19,9 +17,14 @@ class _AddPostScreenState extends State<AddPostScreen> {
   File? _file;
   int currentPage = 0;
   int? lastPage;
+
   @override
-  _fetchNewMedia() async {
-    lastPage = currentPage;
+  void initState() {
+    super.initState();
+    _fetchNewMedia();
+  }
+
+  Future<void> _fetchNewMedia() async {
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (ps.isAuth) {
       List<AssetPathEntity> album =
@@ -29,56 +32,46 @@ class _AddPostScreenState extends State<AddPostScreen> {
       List<AssetEntity> media =
           await album[0].getAssetListPaged(page: currentPage, size: 60);
 
-      for (var asset in media) {
-        if (asset.type == AssetType.image) {
-          final file = await asset.file;
-          if (file != null) {
-            path.add(File(file.path));
-            _file = path[0];
-          }
-        }
-      }
       List<Widget> temp = [];
       for (var asset in media) {
-        temp.add(
-          FutureBuilder(
-            future: asset.thumbnailDataWithSize(ThumbnailSize(200, 200)),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done)
-                return Container(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.memory(
-                          snapshot.data!,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+        final file = await asset.file;
+        if (file != null) {
+          path.add(File(file.path));
+          _file ??= path[0];
 
-              return Container();
-            },
-          ),
-        );
+          temp.add(
+            FutureBuilder(
+              future: asset.thumbnailDataWithSize(ThumbnailSize(200, 200)),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
+                  return Image.memory(
+                    snapshot.data!,
+                    fit: BoxFit.cover,
+                  );
+                }
+                return Container(color: Colors.grey); // Placeholder
+              },
+            ),
+          );
+        }
       }
-      setState(() {
-        _mediaList.addAll(temp);
-        currentPage++;
-      });
-    }
-  }
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _fetchNewMedia();
+      // Kiểm tra mounted trước khi gọi setState
+      if (mounted) {
+        setState(() {
+          _mediaList.addAll(temp);
+          currentPage++;
+        });
+      }
+    } else {
+      print('Permission denied');
+    }
   }
 
   int indexx = 0;
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -89,16 +82,19 @@ class _AddPostScreenState extends State<AddPostScreen> {
           'New Post',
           style: TextStyle(color: Colors.black),
         ),
-        centerTitle: false,
         actions: [
           Center(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 10.w),
               child: GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => AddPostTextScreen(_file!),
-                  ));
+                  if (_file != null) {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => AddPostTextScreen(_file!),
+                    ));
+                  } else {
+                    print('No file selected');
+                  }
                 },
                 child: Text(
                   'Next',
@@ -110,63 +106,67 @@ class _AddPostScreenState extends State<AddPostScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 375.h,
-                  child: GridView.builder(
-                    itemCount: _mediaList.isEmpty ? _mediaList.length : 1,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 1,
-                      mainAxisSpacing: 1,
-                      crossAxisSpacing: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      return _mediaList[indexx];
-                    },
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  height: 40.h,
-                  color: Colors.white,
-                  child: Row(
-                    children: [
-                      SizedBox(width: 10.w),
-                      Text(
-                        'Recent',
-                        style: TextStyle(
-                            fontSize: 15.sp, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-                GridView.builder(
-                  shrinkWrap: true,
-                  itemCount: _mediaList.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 1,
-                    crossAxisSpacing: 2,
-                  ),
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          indexx = index;
-                          _file = path[index];
-                        });
-                      },
-                      child: _mediaList[index],
-                    );
-                  },
-                ),
-              ],
+        child: Column(
+          children: [
+            Container(
+              height: 375.h,
+              color: Colors.black12,
+              child: _file != null
+                  ? Image.file(
+                      _file!,
+                      fit: BoxFit.cover,
+                    )
+                  : const Center(child: Text('No image selected')),
             ),
-          ),
+
+            Container(
+              width: double.infinity,
+              height: 40.h,
+              color: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Recent',
+                  style:
+                      TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+
+            // Media Grid
+            Expanded(
+              child: GridView.builder(
+                itemCount: _mediaList.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 2,
+                  crossAxisSpacing: 2,
+                ),
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        indexx = index;
+                        _file = path[index];
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: index == indexx
+                              ? Colors.blue
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: _mediaList[index],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
