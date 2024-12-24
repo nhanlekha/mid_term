@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SizedBox(width: 96.w, height: 100.h),
               Center(
-                child: Image.asset('images/logo.jpg'),
+                child: Image.asset('assets/images/logo.png'),
               ),
               SizedBox(height: 120.h),
               CustomTextfield(email, email_F, 'Email', Icons.email),

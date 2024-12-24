@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       surfaceTintColor: ColorData.backGroundColorTextField,
       centerTitle: true,
       title: Image.asset(
-        'images/instagram.jpg',
+        'assets/images/logo.png',
         height: 28,
       ),
       leading: IconButton(
