@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:mid_term/data/model/post.dart';
 import 'package:mid_term/screen/post_screen.dart';
 import 'package:mid_term/screen/profile_screen.dart';
-
 import '../util/image_cached.dart';
+import '../data/firebase_service/post_service.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -16,9 +16,9 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
-  final search = TextEditingController();
-  final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
-  bool show = true;
+  final TextEditingController searchController = TextEditingController();
+  bool showPosts = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,162 +27,160 @@ class _ExploreScreenState extends State<ExploreScreen> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SearchBox(),
-            if (show)
-              StreamBuilder<QuerySnapshot>(
-                stream: _firebaseFirestore.collection('posts').snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const SliverToBoxAdapter(
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                  return SliverGrid(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final snap = snapshot.data!.docs[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => PostScreen(
-                                  snap.data(),
-                                ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                            ),
-                            child: CachedImage(
-                              snap['postImage'],
-                            ),
-                          ),
-                        );
-                      },
-                      childCount: snapshot.data!.docs.length,
-                    ),
-                    gridDelegate: SliverQuiltedGridDelegate(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 3,
-                      crossAxisSpacing: 3,
-                      pattern: const [
-                        QuiltedGridTile(2, 1),
-                        QuiltedGridTile(2, 2),
-                        QuiltedGridTile(1, 1),
-                        QuiltedGridTile(1, 1),
-                        QuiltedGridTile(1, 1),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            if (!show)
-              StreamBuilder(
-                stream: _firebaseFirestore
-                    .collection('users')
-                    .where('username', isGreaterThanOrEqualTo: search.text)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const SliverToBoxAdapter(
-                        child: Center(child: CircularProgressIndicator()));
-                  }
-                  return SliverPadding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final snap = snapshot.data!.docs[index];
-                          return Column(
-                            children: [
-                              SizedBox(height: 10.h),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) =>
-                                        ProfileScreen(Uid: snap.id),
-                                  ));
-                                },
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 23.r,
-                                      backgroundImage: NetworkImage(
-                                        snap['profile'],
-                                      ),
-                                    ),
-                                    SizedBox(width: 15.w),
-                                    Text(snap['username']),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                        childCount: snapshot.data!.docs.length,
-                      ),
-                    ),
-                  );
-                },
-              )
+            _buildSearchBox(),
+            showPosts ? _buildPostGrid() : _buildUserList(),
           ],
         ),
       ),
     );
   }
 
-  SliverToBoxAdapter SearchBox() {
+  SliverToBoxAdapter _buildSearchBox() {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
         child: Container(
-          width: double.infinity,
           height: 36.h,
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
-            borderRadius: BorderRadius.all(
-              Radius.circular(10.r),
-            ),
+            borderRadius: BorderRadius.circular(10.r),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5.w),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.search,
-                  color: Colors.black,
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: TextField(
-                    onChanged: (value) {
-                      setState(() {
-                        if (value.length > 0) {
-                          show = false;
-                        } else {
-                          show = true;
-                        }
-                      });
-                    },
-                    controller: search,
-                    decoration: const InputDecoration(
-                      hintText: 'Search User',
-                      hintStyle: TextStyle(color: Colors.black),
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
+          child: Row(
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(Icons.search, color: Colors.black),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      showPosts = value.isEmpty;
+                    });
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Search User',
+                    hintStyle: TextStyle(color: Colors.black),
+                    border: InputBorder.none,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPostGrid() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: PostService().getAllPosts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Center(child: Text("No posts available")),
+          );
+        }
+
+        final posts = snapshot.data!.docs
+            .map((e) => Post.fromJson(e.data() as Map<String, dynamic>))
+            .toList();
+        return SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final post = posts[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PostScreen(posts[index]),
+                    ),
+                  );
+                },
+                child: CachedImage(
+                  posts[index].postImage,
+                ),
+              );
+            },
+            childCount: posts.length,
+          ),
+          gridDelegate: SliverQuiltedGridDelegate(
+            crossAxisCount: 3,
+            mainAxisSpacing: 3,
+            crossAxisSpacing: 3,
+            pattern: [
+              QuiltedGridTile(2, 1),
+              QuiltedGridTile(2, 2),
+              QuiltedGridTile(1, 1),
+              QuiltedGridTile(1, 1),
+              QuiltedGridTile(1, 1),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: PostService().searchUsers(searchController.text),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Center(child: Text("No users found")),
+          );
+        }
+
+        final users = snapshot.data!.docs;
+
+        return SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final user = users[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ProfileScreen(Uid: user.id),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 23.r,
+                          backgroundImage: NetworkImage(user['profile']),
+                        ),
+                        SizedBox(width: 15.w),
+                        Text(user['username']),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              childCount: users.length,
+            ),
+          ),
+        );
+      },
     );
   }
 }

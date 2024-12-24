@@ -27,7 +27,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   late List<CameraDescription> cameras;
   late CameraController cameraController;
-  late Future<void> cameraValue; // Declare cameraValue
+  Future<void>? cameraValue; // Declare cameraValue
   List<File> imagesList = [];
   bool isFlashOn = false;
   bool isRearCamera = true;

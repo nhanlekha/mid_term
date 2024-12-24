@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mid_term/data/firebase_service/post_service.dart';
+import 'package:mid_term/data/model/post.dart';
+import 'package:mid_term/helpers/extensions.dart';
 import 'package:mid_term/screen/post_screen.dart';
+import 'package:mid_term/widgets/status_card.dart';
 
 import '../data/firebase_service/firestor.dart';
 import '../data/model/usermodel.dart';
 import '../util/image_cached.dart';
 
+// ignore: must_be_immutable
 class ProfileScreen extends StatefulWidget {
   String Uid;
   ProfileScreen({super.key, required this.Uid});
@@ -24,9 +28,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool yourse = false;
   List following = [];
   bool follow = false;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getdata();
     if (widget.Uid == _auth.currentUser!.uid) {
@@ -41,7 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .collection('users')
         .doc(_auth.currentUser!.uid)
         .get();
-    following = (snap.data()! as dynamic)['following'];
+    // Sử dụng giá trị mặc định nếu 'following' là null
+    following = (snap.data()! as dynamic)['following'] ?? [];
     if (following.contains(widget.Uid)) {
       setState(() {
         follow = true;
@@ -70,30 +75,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               StreamBuilder(
-                stream: _firebaseFirestore
-                    .collection('posts')
-                    .where('uid', isEqualTo: widget.Uid)
-                    .snapshots(),
+                stream: PostService().getPostsInProfile(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return SliverToBoxAdapter(
-                        child:
-                            const Center(child: CircularProgressIndicator()));
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverToBoxAdapter(
+                      child: Center(child: CircularProgressIndicator()),
+                    );
                   }
-                  post_lenght = snapshot.data!.docs.length;
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: Center(child: Text("No posts available")),
+                    );
+                  }
+                  final posts = snapshot.data!.docs
+                      .map((e) => Post.fromJson(e.data()))
+                      .toList();
+
                   return SliverGrid(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final snap = snapshot.data!.docs[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => PostScreen(snap.data())));
-                        },
-                        child: CachedImage(
-                          snap['postImage'],
-                        ),
-                      );
-                    }, childCount: post_lenght),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => PostScreen(posts[index]),
+                              ),
+                            );
+                          },
+                          child: CachedImage(
+                            posts[index].postImage,
+                          ),
+                        );
+                      },
+                      childCount: posts.length,
+                    ),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
@@ -110,113 +125,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ignore: non_constant_identifier_names
   Widget Head(UserModel user) {
     return Container(
       color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 10.h),
-                child: ClipOval(
-                  child: SizedBox(
-                    width: 80.w,
-                    height: 80.h,
-                    child: CachedImage(user.profile),
-                  ),
+              ClipOval(
+                child: SizedBox(
+                  width: context.mediaQueryWidth * 0.25,
+                  height: context.mediaQueryWidth * 0.25,
+                  child: CachedImage(user.profile ?? ''),
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(width: 35.w),
-                      Text(
-                        post_lenght.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                      SizedBox(width: 53.w),
-                      Text(
-                        user.followers!.length.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                      SizedBox(width: 70.w),
-                      Text(
-                        user.following!.length.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 30.w),
-                      Text(
-                        'Posts',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                      SizedBox(width: 25.w),
-                      Text(
-                        'Followers',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                      SizedBox(width: 19.w),
-                      Text(
-                        'Following',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              )
+              SizedBox(width: 30),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    StatCard(
+                      label: 'Posts',
+                      count: post_lenght,
+                    ),
+                    StatCard(
+                      label: 'Followers',
+                      count: user.followers?.length ?? 0,
+                    ),
+                    StatCard(
+                      label: 'Following',
+                      count: user.following?.length ?? 0,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.username!,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+          SizedBox(height: 15),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user.username ??
+                    'Unknown', // Dùng 'Unknown' nếu 'username' là null
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(height: 5.h),
-                Text(
-                  user.bio!,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                user.bio ??
+                    'No bio available', // Dùng 'No bio available' nếu 'bio' là null
+                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w300),
+              ),
+            ],
           ),
-          SizedBox(height: 20.h),
+          SizedBox(height: 20),
+          // Follow/Unfollow button
           Visibility(
             visible: !follow,
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 13.w),
+              padding: EdgeInsets.symmetric(horizontal: 13),
               child: GestureDetector(
                 onTap: () {
                   if (yourse == false) {
@@ -228,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
                 child: Container(
                   alignment: Alignment.center,
-                  height: 30.h,
+                  height: 40,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: yourse ? Colors.white : Colors.blue,
@@ -237,7 +209,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: yourse ? Colors.grey.shade400 : Colors.blue),
                   ),
                   child: yourse
-                      ? Text('Edit Your Profile')
+                      ? Text('Edit Your Profile',
+                          style: TextStyle(color: Colors.black))
                       : Text(
                           'Follow',
                           style: TextStyle(color: Colors.white),
@@ -246,10 +219,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
+          // Unfollow button
           Visibility(
             visible: follow,
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 13.w),
+              padding: EdgeInsets.symmetric(horizontal: 13),
               child: Row(
                 children: [
                   Expanded(
@@ -261,42 +235,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                       },
                       child: Container(
-                          alignment: Alignment.center,
-                          height: 30.h,
-                          width: 100.w,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(5.r),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Text('Unfollow')),
+                        alignment: Alignment.center,
+                        height: 40,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(5.r),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Text('Unfollow'),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 8.w),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Container(
                       alignment: Alignment.center,
-                      height: 30.h,
-                      width: 100.w,
+                      height: 40,
+                      width: 100,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(5.r),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Text(
-                        'Message',
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      child: Text('Message'),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 5.h),
+          SizedBox(height: 10),
+          // Tab Bar
           SizedBox(
             width: double.infinity,
-            height: 30.h,
+            height: 40,
             child: const TabBar(
               unselectedLabelColor: Colors.grey,
               labelColor: Colors.black,
@@ -308,9 +281,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          SizedBox(
-            height: 5.h,
-          )
         ],
       ),
     );

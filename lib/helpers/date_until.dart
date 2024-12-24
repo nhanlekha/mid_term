@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
 class MyDateUtil {
-  // for getting formatted time from milliSecondsSinceEpochs String
   static String getFormattedTime(
       {required BuildContext context, required String time}) {
     final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
     return TimeOfDay.fromDateTime(date).format(context);
   }
 
-  // for getting formatted time for sent & read
   static String getMessageTime(
       {required BuildContext context, required String time}) {
     final DateTime sent = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
@@ -112,10 +110,21 @@ class MyDateUtil {
       return '${difference.inSeconds} giây trước';
     } else if (difference.inHours > 0 && difference.inHours < 24) {
       int hours = difference.inHours.abs();
-      return '${hours} giờ trước';
+      return '$hours giờ trước';
     } else {
       int days = difference.inDays.abs();
-      return '${days} ngày trước';
+      return '$days ngày trước';
     }
+  }
+
+  static String getFormatDateTimePost(timestamp) {
+    DateTime dateTime =
+        DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp));
+
+    // Lấy các thành phần ngày, tháng, năm
+    String formattedDate =
+        "${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}";
+
+    return formattedDate;
   }
 }
