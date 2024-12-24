@@ -26,32 +26,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
+      extendBody: false,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(width: 96.w, height: 100.h),
-            Center(
-              child: Image.asset('images/logo.jpg'),
-            ),
-            SizedBox(height: 120.h),
-            Textfild(email, email_F, 'Email', Icons.email),
-            SizedBox(height: 15.h),
-            Textfild(password, password_F, 'Password', Icons.lock),
-            SizedBox(height: 15.h),
-            forget(),
-            SizedBox(height: 15.h),
-            login(),
-            SizedBox(height: 15.h),
-            Have()
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(width: 96.w, height: 100.h),
+              Center(
+                child: Image.asset('images/logo.jpg'),
+              ),
+              SizedBox(height: 120.h),
+              CustomTextfield(email, email_F, 'Email', Icons.email),
+              SizedBox(height: 15.h),
+              CustomTextfield(password, password_F, 'Password', Icons.lock, isPassword: true),
+              SizedBox(height: 15.h),
+              forget(),
+              SizedBox(height: 15.h),
+              login(),
+              SizedBox(height: 15.h),
+              HaveAccount()
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget Have() {
+  Widget HaveAccount() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Row(
@@ -125,8 +128,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Padding Textfild(TextEditingController controll, FocusNode focusNode,
-      String typename, IconData icon) {
+  Padding CustomTextfield(
+      TextEditingController controller,
+      FocusNode focusNode,
+      String typeName,
+      IconData icon,
+      {bool isPassword = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Container(
@@ -137,16 +144,16 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: TextField(
           style: TextStyle(fontSize: 18.sp, color: Colors.black),
-          controller: controll,
+          controller: controller,
           focusNode: focusNode,
+          obscureText: isPassword, // Ẩn nội dung nếu là password
           decoration: InputDecoration(
-            hintText: typename,
+            hintText: typeName,
             prefixIcon: Icon(
               icon,
               color: focusNode.hasFocus ? Colors.black : Colors.grey[600],
             ),
-            contentPadding:
-                EdgeInsets.symmetric(horizontal: 15.w, vertical: 15.h),
+            contentPadding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 15.h),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(5.r),
               borderSide: BorderSide(
@@ -166,4 +173,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
 }
