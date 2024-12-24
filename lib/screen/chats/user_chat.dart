@@ -182,7 +182,6 @@ class _UserChatPageState extends State<UserChatPage> {
                       if (focusNode.hasFocus) {
                         focusNode.unfocus();
                       }
-
                       showIcon = !showIcon;
                     });
                   },

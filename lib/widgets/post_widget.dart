@@ -118,24 +118,32 @@ class _PostWidgetState extends State<PostWidget> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            width: double.infinity,
-            height: 300.h,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: CachedNetworkImageProvider(widget.post.postImage!),
-                fit: BoxFit.cover,
-              ),
+          SizedBox(
+            width: 375.w,
+            height: 375.h,
+            child: CachedImage(
+              widget.post.postImage,
             ),
           ),
-          if (isAnimating)
-            LikeAnimation(
+          AnimatedOpacity(
+            duration: Duration(milliseconds: 200),
+            opacity: isAnimating ? 1 : 0,
+            child: LikeAnimation(
               isAnimating: isAnimating,
-              duration: const Duration(milliseconds: 400),
+              duration: Duration(milliseconds: 400),
               iconlike: false,
-              End: () => setState(() => isAnimating = false),
-              child: Icon(Icons.favorite, size: 100.w, color: Colors.red),
+              End: () {
+                setState(() {
+                  isAnimating = false;
+                });
+              },
+              child: Icon(
+                Icons.favorite,
+                size: 100.w,
+                color: Colors.red,
+              ),
             ),
+          )
         ],
       ),
     );
