@@ -87,7 +87,7 @@ class Firebase_Firestor {
     required String location,
   }) async {
     var uid = Uuid().v4();
-    DateTime data = DateTime.now();
+    final time = DateTime.now().millisecondsSinceEpoch.toString();
     UserModel user = await getUser();
     await _firebaseFirestore.collection('posts').doc(uid).set({
       'postImage': postImage,
@@ -98,7 +98,9 @@ class Firebase_Firestor {
       'uid': _auth.currentUser!.uid,
       'postId': uid,
       'like': [],
-      'time': data
+      'time': time,
+      'report': [],
+      'reportCount': 0,
     });
     return true;
   }
@@ -108,7 +110,7 @@ class Firebase_Firestor {
     required String caption,
   }) async {
     var uid = Uuid().v4();
-    DateTime data = DateTime.now();
+    final time = DateTime.now().millisecondsSinceEpoch.toString();
     UserModel user = await getUser();
     await _firebaseFirestore.collection('reels').doc(uid).set({
       'reelsvideo': video,
@@ -118,7 +120,7 @@ class Firebase_Firestor {
       'uid': _auth.currentUser!.uid,
       'postId': uid,
       'like': [],
-      'time': data
+      'time': time
     });
     return true;
   }

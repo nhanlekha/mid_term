@@ -10,9 +10,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mid_term/data/firebase_service/chat_message.dart';
 import 'package:mid_term/data/model/message.dart';
 import 'package:mid_term/data/model/usermodel.dart';
+import 'package:mid_term/helpers/color.dart';
 import 'package:mid_term/helpers/date_until.dart';
+import 'package:mid_term/helpers/extensions.dart';
 import 'package:mid_term/helpers/image_helper.dart';
 import 'package:mid_term/screen/chats/components/app_bar_container.dart';
+import 'package:mid_term/screen/profile_screen.dart';
 
 class UserChatPage extends StatefulWidget {
   const UserChatPage({super.key, required this.userChat});
@@ -33,6 +36,7 @@ class _UserChatPageState extends State<UserChatPage> {
   TextEditingController textUpdateController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   final String _image = '';
+  bool isTimeDisplayed = false;
   @override
   void initState() {
     // TODO: implement initState
@@ -122,25 +126,32 @@ class _UserChatPageState extends State<UserChatPage> {
                   itemCount: listMessage.length,
                   reverse: true,
                   itemBuilder: (context, index) {
+                    Message currentMessage = listMessage[index];
+                    Message? previousMessage = index < listMessage.length - 1
+                        ? listMessage[index + 1]
+                        : null;
                     if (listMessage[index].fromId == widget.userChat.id) {
-                      return buildMessageUserRecive(listMessage[index]);
+                      return buildMessageUserRecive(
+                          currentMessage, previousMessage);
                     } else {
-                      return buildMessageSend(listMessage[index]);
+                      return buildMessageSend(currentMessage, previousMessage,
+                          isLast: currentMessage.sent == listMessage.last.sent);
                     }
                   },
                 );
               }
             } else {
-              return ListView.builder(
-                itemCount: listMessage.length,
-                itemBuilder: (context, index) {
-                  if (listMessage[index].fromId == widget.userChat.id) {
-                    return buildMessageUserRecive(listMessage[index]);
-                  } else {
-                    return buildMessageSend(listMessage[index]);
-                  }
-                },
-              );
+              // return ListView.builder(
+              //   itemCount: listMessage.length,
+              //   itemBuilder: (context, index) {
+              //     if (listMessage[index].fromId == widget.userChat.id) {
+              //       return buildMessageUserRecive(listMessage[index]);
+              //     } else {
+              //       return buildMessageSend(listMessage[index]);
+              //     }
+              //   },
+              // );
+              return Container();
             }
           },
         ))),
@@ -354,72 +365,132 @@ class _UserChatPageState extends State<UserChatPage> {
     );
   }
 
-  Widget buildMessageUserRecive(Message message) {
+  bool shouldShowTime(String currentMessageTime, String previousMessageTime) {
+    // Chuyển đổi timestamp string thành DateTime
+    DateTime currentTime =
+        DateTime.fromMillisecondsSinceEpoch(int.parse(currentMessageTime));
+    DateTime previousTime =
+        DateTime.fromMillisecondsSinceEpoch(int.parse(previousMessageTime));
+
+    // Kiểm tra sự khác biệt thời gian giữa 2 tin nhắn (tính bằng phút)
+    final difference = currentTime.difference(previousTime).inMinutes;
+
+    // Kiểm tra nếu 2 tin nhắn thuộc cùng một ngày
+    bool isSameDay = currentTime.year == previousTime.year &&
+        currentTime.month == previousTime.month &&
+        currentTime.day == previousTime.day;
+
+    // Kiểm tra nếu là ngày hôm nay
+    DateTime today = DateTime.now();
+    bool isToday = currentTime.year == today.year &&
+        currentTime.month == today.month &&
+        currentTime.day == today.day;
+
+    // Nếu là ngày hôm nay, chỉ hiển thị nếu sự khác biệt lớn hơn 5 phút
+    if (isToday) {
+      return difference > 5;
+    }
+
+    // Nếu là ngày hôm qua hoặc các ngày khác, chỉ hiển thị 1 lần duy nhất trong ngày
+    // Kiểm tra nếu tin nhắn này thuộc một ngày khác (không phải hôm nay)
+    bool isNewDay = currentTime.year != previousTime.year ||
+        currentTime.month != previousTime.month ||
+        currentTime.day != previousTime.day;
+
+    return isNewDay;
+  }
+
+  Widget buildMessageUserRecive(Message message, Message? previousMessage) {
     if (message.read.isEmpty) {
       ChatMessageService.updateMessageRead(message);
     }
+    bool showTime = false;
+
+    // Nếu previousMessage là null (tin nhắn đầu tiên) hoặc thời gian giữa các tin nhắn quá 5 phút
+    if (previousMessage == null ||
+        shouldShowTime(message.sent, previousMessage.sent)) {
+      showTime = true;
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(
-              left: 5,
+          if (showTime)
+            Text(
+              MyDateUtil.getLastMessageTime(
+                  context: context, time: message.sent),
+              style:
+                  const TextStyle(fontSize: 16, color: ColorData.greyTextColor),
             ),
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: NetworkImage(widget.userChat.profile!))),
+          SizedBox(
+            height: 10,
           ),
-          Flexible(
-            child: Container(
-              margin: const EdgeInsets.only(left: 10, right: 20),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                      bottomRight: Radius.circular(10)),
-                  border: Border.all(color: Colors.black38)),
-              child: message.type == Type.image
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: CachedNetworkImage(
-                        imageUrl: message.msg,
-                        placeholder: (context, url) => const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 1)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Avatar
+              Container(
+                margin: const EdgeInsets.only(left: 5),
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                        image: NetworkImage(widget.userChat.profile!))),
+              ),
+              Flexible(
+                child: Container(
+                  margin: const EdgeInsets.only(left: 10, right: 20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomRight: Radius.circular(10)),
+                      border: Border.all(color: Colors.black38)),
+                  child: message.type == Type.image
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CachedNetworkImage(
+                            width: context.mediaQueryWidth * 0.4,
+                            imageUrl: message.msg,
+                            placeholder: (context, url) => const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Center(
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 1)),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.image, size: 70),
+                          ),
+                        )
+                      : Text(
+                          message.msg,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                          ),
+                          maxLines: null,
                         ),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.image, size: 70),
-                      ),
-                    )
-                  : Text(
-                      message.msg,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 15,
-                      ),
-                      maxLines: null,
-                    ),
-            ),
+                ),
+              ),
+            ],
           ),
-          Text(
-            MyDateUtil.getMessageTime(context: context, time: message.sent),
-            style: const TextStyle(fontSize: 12, color: Colors.blue),
-          ),
-          const SizedBox(
-            width: 10,
-          )
         ],
       ),
     );
   }
 
-  Widget buildMessageSend(Message message) {
+  Widget buildMessageSend(Message message, Message? previousMessage,
+      {bool isLast = true}) {
+    bool showTime = false;
+    print(isLast.toString());
+    if (previousMessage == null ||
+        shouldShowTime(message.sent, previousMessage.sent)) {
+      showTime = true;
+    }
+
     return GestureDetector(
       onLongPress: () {
         showModalBottomSheet(
@@ -438,23 +509,19 @@ class _UserChatPageState extends State<UserChatPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  //
                   GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: message.msg));
                         Navigator.pop(context);
                       },
                       child: buildItemOption("Copy", Icons.copy)),
-                  //
                   GestureDetector(
                       onTap: () {
-                        // print("object");
                         Navigator.of(context).pop();
                         ChatMessageService.deleteTextMessage(message);
                       },
                       child: buildItemOption(
                           "Delete", Icons.delete_outline_rounded)),
-                  //
                   GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
@@ -491,10 +558,9 @@ class _UserChatPageState extends State<UserChatPage> {
                                             textUpdateController.text, message);
                                       }
                                     },
-                                    child: const Text(
-                                      "Yes",
-                                      style: TextStyle(color: Colors.redAccent),
-                                    ))
+                                    child: const Text("Yes",
+                                        style:
+                                            TextStyle(color: Colors.redAccent)))
                               ],
                             );
                           },
@@ -511,64 +577,71 @@ class _UserChatPageState extends State<UserChatPage> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 20),
         alignment: Alignment.centerRight,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        child: Column(
           children: [
-            if (message.read.isNotEmpty)
-              ImageHelper.loadFromAsset("assets/images/double_check.png",
-                  width: 15),
-            const SizedBox(
-              width: 5,
+            if (showTime)
+              Text(
+                MyDateUtil.getLastMessageTime(
+                    context: context, time: message.sent),
+                style: const TextStyle(
+                    fontSize: 16, color: ColorData.greyTextColor),
+              ),
+            SizedBox(
+              height: 10,
             ),
-            Text(
-              MyDateUtil.getLastMessageTime(
-                  context: context, time: message.sent),
-              style: const TextStyle(fontSize: 12, color: Colors.blue),
-            ),
-            Flexible(
-              child: Container(
-                margin: const EdgeInsets.only(left: 10, right: 5),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10)),
-                    border: Border.all(color: Colors.black38)),
-                child: message.isDelete == true
-                    ? const Text(
-                        "Đã xóa tin nhắn này",
-                        style: TextStyle(
-                          color: Colors.black12,
-                          fontSize: 15,
-                        ),
-                      )
-                    : message.type == Type.image
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
-                            child: CachedNetworkImage(
-                              width: 200,
-                              imageUrl: message.msg,
-                              placeholder: (context, url) => const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.image, size: 70),
-                            ),
-                          )
-                        : Text(
-                            message.msg,
-                            style: const TextStyle(
-                              color: Colors.black,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 10, right: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                            bottomLeft: Radius.circular(10)),
+                        border: Border.all(color: Colors.black38)),
+                    child: message.isDelete == true
+                        ? const Text(
+                            "Đã xóa tin nhắn này",
+                            style: TextStyle(
+                              color: Colors.black12,
                               fontSize: 15,
                             ),
-                            maxLines: null,
-                          ),
-              ),
+                          )
+                        : message.type == Type.image
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: CachedNetworkImage(
+                                  width: 200,
+                                  imageUrl: message.msg,
+                                  placeholder: (context, url) => const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.image, size: 70),
+                                ),
+                              )
+                            : Text(
+                                message.msg,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 15,
+                                ),
+                                maxLines: null,
+                              ),
+                  ),
+                ),
+              ],
             ),
+            if (isLast && message.read.isNotEmpty)
+              ImageHelper.loadFromAsset("assets/images/double_check.png",
+                  width: 15),
           ],
         ),
       ),

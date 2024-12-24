@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mid_term/data/firebase_service/firestor.dart';
 import 'package:mid_term/data/firebase_service/user_list.dart';
 import 'package:mid_term/data/model/usermodel.dart';
+import 'package:mid_term/helpers/color.dart';
+import 'package:mid_term/helpers/extensions.dart';
 
 import '../screen/add_screen.dart';
 import '../screen/explore.dart';
@@ -83,15 +85,13 @@ class _Navigations_ScreenState extends State<Navigations_Screen> {
   Widget build(BuildContext context) {
     return StreamBuilder(
       initialData: null,
-      stream: UserService().Usermodel,
+      stream: UserService().userModelStream,
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          print("hahahihi");
-          UserService.userMod = snapshot.data!;
-        }
         return Scaffold(
-          bottomNavigationBar: Container(
+          bottomNavigationBar: SizedBox(
+            height: 70,
             child: BottomNavigationBar(
+              backgroundColor: ColorData.backGroundColorTextField,
               type: BottomNavigationBarType.fixed,
               selectedItemColor: Colors.black,
               unselectedItemColor: Colors.grey,
