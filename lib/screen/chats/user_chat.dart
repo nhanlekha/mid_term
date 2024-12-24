@@ -15,6 +15,7 @@ import 'package:mid_term/helpers/date_until.dart';
 import 'package:mid_term/helpers/extensions.dart';
 import 'package:mid_term/helpers/image_helper.dart';
 import 'package:mid_term/screen/chats/components/app_bar_container.dart';
+import 'package:mid_term/screen/chats/video_call.dart';
 import 'package:mid_term/screen/profile_screen.dart';
 
 class UserChatPage extends StatefulWidget {
@@ -98,6 +99,26 @@ class _UserChatPageState extends State<UserChatPage> {
           ),
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onTap: () {
+                // Xử lý sự kiện click ở đây
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => VideoCall(
+                        )));
+
+              },
+              child: ImageHelper.loadFromAsset(
+                "assets/images/video_add.png",
+                width: 30,
+              ),
+            ),
+          ),
+
+
           ImageHelper.loadFromAsset("assets/images/options.png", width: 35)
         ],
         automaticallyImplyLeading: true,
@@ -197,7 +218,7 @@ class _UserChatPageState extends State<UserChatPage> {
               width: 10,
             ),
             SizedBox(
-                width: 240,
+                width: context.mediaQueryWidth * 0.58,
                 child: TextField(
                   controller: textController,
                   maxLines: null,
@@ -365,13 +386,10 @@ class _UserChatPageState extends State<UserChatPage> {
   }
 
   bool shouldShowTime(String currentMessageTime, String previousMessageTime) {
-    // Chuyển đổi timestamp string thành DateTime
     DateTime currentTime =
         DateTime.fromMillisecondsSinceEpoch(int.parse(currentMessageTime));
     DateTime previousTime =
         DateTime.fromMillisecondsSinceEpoch(int.parse(previousMessageTime));
-
-    // Kiểm tra sự khác biệt thời gian giữa 2 tin nhắn (tính bằng phút)
     final difference = currentTime.difference(previousTime).inMinutes;
 
     // Kiểm tra nếu 2 tin nhắn thuộc cùng một ngày
