@@ -42,6 +42,9 @@ class _AddPostTextScreenState extends State<AddPostTextScreen> {
           location: locationController.text,
         );
         if (mounted) Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Thành công!')),
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${e.toString()}')),
@@ -56,7 +59,7 @@ class _AddPostTextScreenState extends State<AddPostTextScreen> {
 
   Future<String?> sendImageAndGetCaption(File file) async {
     try {
-      final String apiUrl = 'http://192.168.1.77:8000/predict/';
+      final String apiUrl = 'http://192.168.1.9:8000/predict/';
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
       request.files.add(await http.MultipartFile.fromPath('file', file.path));
 
@@ -68,7 +71,7 @@ class _AddPostTextScreenState extends State<AddPostTextScreen> {
         final caption = json['caption'];
         return caption[0];
       } else {
-        debugPrint('Error: "caption" not found in response.');
+        debugPrint('Error: "caption" không thể gen ra được.');
         return null;
       }
     } catch (e) {

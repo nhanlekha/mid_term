@@ -104,12 +104,8 @@ class _UserChatPageState extends State<UserChatPage> {
             child: GestureDetector(
               onTap: () {
                 // Xử lý sự kiện click ở đây
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => VideoCall(
-                        )));
-
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => VideoCall()));
               },
               child: ImageHelper.loadFromAsset(
                 "assets/images/video_add.png",
@@ -117,8 +113,6 @@ class _UserChatPageState extends State<UserChatPage> {
               ),
             ),
           ),
-
-
           ImageHelper.loadFromAsset("assets/images/options.png", width: 35)
         ],
         automaticallyImplyLeading: true,
